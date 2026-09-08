@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FixMyPath Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111418;
+    --surface2: #181c23;
+    --border: #1f2530;
+    --accent: #f5a623;
+    --accent2: #ff4d4d;
+    --green: #22d47b;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-head);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* ─── Animated grid background ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(245,166,35,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,166,35,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* ─── Header ─── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 20px rgba(245,166,35,0.35);
+  }
+
+  .logo-text {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(34,212,123,0.1);
+    border: 1px solid rgba(34,212,123,0.25);
+    padding: 5px 13px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    font-family: var(--font-mono);
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  /* ─── Stats Row ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .stat-card.total::before { background: var(--accent); }
+  .stat-card.danger::before { background: var(--accent2); }
+  .stat-card.safe::before { background: var(--green); }
+  .stat-card.pending::before { background: #7c6ff7; }
+
+  .stat-card:hover { transform: translateY(-2px); border-color: #2d3545; }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-family: var(--font-mono);
+  }
+
+  .stat-value {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .stat-card.total .stat-value { color: var(--accent); }
+  .stat-card.danger .stat-value { color: var(--accent2); }
+  .stat-card.safe .stat-value { color: var(--green); }
+  .stat-card.pending .stat-value { color: #7c6ff7; }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: var(--font-mono);
+  }
+
+  /* ─── Controls Bar ─── */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .controls-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    user-select: none;
+  }
+
+  .mode-toggle:hover { border-color: var(--accent); }
+
+  .toggle-switch {
+    width: 38px; height: 20px;
+    background: var(--border);
+    border-radius: 999px;
+    position: relative;
+    transition: background 0.25s;
+  }
+
+  .toggle-switch.on { background: var(--accent); }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: white;
+    transition: left 0.25s;
+  }
+
+  .toggle-switch.on::after { left: 21px; }
+
+  .mode-label {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .mode-label .mode-val { color: var(--accent); font-weight: 700; }
+
+  .btn {
+    padding: 9px 18px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-head);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 7px;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+
+  .btn:hover { background: var(--surface2); border-color: #2d3545; }
+
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  .btn.primary:hover { background: #e09520; border-color: #e09520; }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 8px 14px;
+    transition: border-color 0.2s;
+  }
+
+  .search-box:focus-within { border-color: var(--accent); }
+
+  .search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    width: 180px;
+  }
+
+  .search-box input::placeholder { color: var(--muted); }
+
+  .filter-group {
+    display: flex;
+    gap: 6px;
+  }
+
+  .filter-btn {
+    padding: 7px 13px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(245,166,35,0.08); }
+  .filter-btn.danger-f.active { border-color: var(--accent2); color: var(--accent2); background: rgba(255,77,77,0.08); }
+  .filter-btn.safe-f.active { border-color: var(--green); color: var(--green); background: rgba(34,212,123,0.08); }
+
+  /* ─── Table ─── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .table-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: var(--font-mono);
+  }
+
+  .refresh-info {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .refresh-ring {
+    width: 10px; height: 10px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 3s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    padding: 13px 18px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  thead th:hover { color: var(--text); }
+  thead th .sort-arrow { opacity: 0.4; margin-left: 4px; }
+  thead th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    animation: rowIn 0.3s ease both;
+  }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+
+  td {
+    padding: 14px 18px;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .id-cell {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(245,166,35,0.25);
+    transition: background 0.2s;
+  }
+
+  .map-link:hover { background: rgba(245,166,35,0.1); }
+
+  .count-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .count-bar {
+    height: 5px;
+    background: var(--border);
+    border-radius: 999px;
+    width: 60px;
+    overflow: hidden;
+  }
+
+  .count-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.5s ease;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .status-pill.dangerous {
+    background: rgba(255,77,77,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(255,77,77,0.25);
+  }
+
+  .status-pill.normal {
+    background: rgba(34,212,123,0.10);
+    color: var(--green);
+    border: 1px solid rgba(34,212,123,0.25);
+  }
+
+  .status-pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .status-pill.dangerous .dot { animation: pulse 1.2s ease-in-out infinite; }
+
+  .action-cell { display: flex; gap: 7px; align-items: center; }
+
+  .act-btn {
+    padding: 5px 12px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    transition: all 0.18s;
+  }
+
+  .act-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(245,166,35,0.07); }
+
+  .act-btn.email:hover { border-color: #7c6ff7; color: #7c6ff7; background: rgba(124,111,247,0.07); }
+
+  .act-btn.sent {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(34,212,123,0.07);
+  }
+
+  /* ─── Empty / Loading ─── */
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ─── Toast ─── */
+  #toast {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999;
+    max-width: 320px;
+  }
+
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast .toast-icon { font-size: 18px; }
+
+  /* ─── Last updated ─── */
+  .last-updated {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    text-align: right;
+    margin-top: 12px;
+  }
+
+  .live-badge.offline {
+    background: rgba(255,77,77,0.1);
+    border-color: rgba(255,77,77,0.25);
+    color: var(--accent2);
+  }
+
+  .live-badge.offline .live-dot { background: var(--accent2); animation: none; }
+
+  .time-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+
+  .time-chip.muted { opacity: 0.5; }
+
+  @media (max-width: 700px) {
+    header { flex-direction: column; align-items: flex-start; }
+    .controls { flex-direction: column; align-items: flex-start; }
+    .search-box input { width: 130px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🚧</div>
+      <div class="logo-text">Fix<span>My</span>Path</div>
+    </div>
+    <div class="live-badge" id="serverBadge"><div class="live-dot"></div>CONNECTING…</div>
+      <div class="live-dot"></div>
+      LIVE FEED
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card total">
+      <div class="stat-label">Total Reports</div>
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-sub">all locations</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="stat-label">Dangerous</div>
+      <div class="stat-value" id="stat-danger">—</div>
+      <div class="stat-sub">need attention</div>
+    </div>
+    <div class="stat-card safe">
+      <div class="stat-label">Normal</div>
+      <div class="stat-value" id="stat-safe">—</div>
+      <div class="stat-sub">no action needed</div>
+    </div>
+    <div class="stat-card pending">
+      <div class="stat-label">Highest Count</div>
+      <div class="stat-value" id="stat-highest">—</div>
+      <div class="stat-sub">most detections</div>
+    </div>
+    <div class="stat-card" style="border-top:2px solid #7c6ff7;">
+      <div class="stat-label" style="color:var(--muted)">Emails Sent</div>
+      <div class="stat-value" id="stat-emails" style="color:#7c6ff7">0</div>
+      <div class="stat-sub">this session</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="controls-left">
+      <!-- Mode Toggle -->
+      <div class="mode-toggle" onclick="toggleMode()">
+        <div class="toggle-switch" id="toggleSwitch"></div>
+        <span class="mode-label">Mode: <span class="mode-val" id="modeVal">AUTO</span></span>
+      </div>
+
+      <!-- Filter -->
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+        <button class="filter-btn danger-f" data-filter="dangerous" onclick="setFilter('dangerous', this)">⚠ Danger</button>
+        <button class="filter-btn safe-f" data-filter="normal" onclick="setFilter('normal', this)">✓ Normal</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <!-- Search -->
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search location..." id="searchInput" oninput="filterTable()">
+      </div>
+
+      <!-- Sort -->
+      <button class="btn" onclick="sortBy('count')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+        Sort Count
+      </button>
+
+      <!-- Email All Dangerous -->
+      <button class="btn primary" onclick="emailAllDangerous()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Alert All Dangerous
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div class="table-header-bar">
+      <div class="table-title">Road Reports</div>
+      <div class="refresh-info">
+        <div class="refresh-ring"></div>
+        Refreshes every 3s
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortByCol('id')">ID <span class="sort-arrow">↕</span></th>
+          <th>Location</th>
+          <th onclick="sortByCol('lastDetected')">Last Detected <span class="sort-arrow">↕</span></th>
+          <th onclick="sortByCol('count')" class="sorted">Count <span class="sort-arrow">↓</span></th>
+          <th onclick="sortByCol('status')">Status <span class="sort-arrow">↕</span></th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="5"><div class="empty-state"><div class="icon">⏳</div><p>Connecting to server…</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="last-updated" id="lastUpdated">Last updated: —</div>
+</div>
+
+<!-- Toast -->
+<div id="toast">
+  <span class="toast-icon" id="toastIcon">✅</span>
+  <span id="toastMsg">Email sent!</span>
+</div>
+
+<script>
+// const BASE_URL = "// Change this line in dashboard.html
+// const BASE_URL = "https://fixmypathserver.onrender.com";
+const BASE_URL = "http://localhost:5000";
+
+let allData = [];
+let activeFilter = 'all';
+let sortCol = 'count';
+let sortDir = -1;
+let emailsSent = 0;
+let sentIds = new Set();
+let isAuto = true;    // assumed initial state; synced after first toggleMode
+let maxCount = 1;
+let serverOnline = false;
+let consecutiveFails = 0;
+
+// ── Fetch reports from real backend ──────────────────────────
+async function fetchData() {
+  try {
+    const res = await fetch(BASE_URL + "/reports", { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+
+    allData = data;
+    maxCount = Math.max(...data.map(d => d.count), 1);
+    consecutiveFails = 0;
+    setServerStatus(true);
+    updateStats();
+    renderTable();
+    document.getElementById('lastUpdated').textContent =
+      'Last updated: ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    consecutiveFails++;
+    if (consecutiveFails >= 2) setServerStatus(false);
+    // Keep existing data visible — don't wipe the table
+  }
+}
+
+function setServerStatus(online) {
+  serverOnline = online;
+  const badge = document.getElementById('serverBadge');
+  if (online) {
+    badge.className = 'live-badge';
+    badge.innerHTML = '<div class="live-dot"></div>LIVE FEED';
+  } else {
+    badge.className = 'live-badge offline';
+    badge.innerHTML = '<div class="live-dot"></div>SERVER OFFLINE';
+  }
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function updateStats() {
+  const total   = allData.length;
+  const danger  = allData.filter(d => d.status === 'dangerous').length;
+  const safe    = total - danger;
+  const highest = allData.reduce((a, b) => (b.count > a ? b.count : a), 0);
+
+  setNum('stat-total',  total);
+  setNum('stat-danger', danger);
+  setNum('stat-safe',   safe);
+  setNum('stat-emails', emailsSent);
+  setNum('stat-highest', highest);
+}
+
+function setNum(id, val) {
+  const el = document.getElementById(id);
+  if (el && el.textContent !== String(val)) el.textContent = val;
+}
+
+// ── Table render ──────────────────────────────────────────────
+function renderTable() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  let rows = [...allData];
+
+  if (activeFilter !== 'all') rows = rows.filter(r => r.status === activeFilter);
+
+  if (query) rows = rows.filter(r =>
+    `${r.latitude},${r.longitude}`.includes(query) ||
+    String(r.id).includes(query) ||
+    (r.lastDetected || '').toLowerCase().includes(query)
+  );
+
+  rows.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (typeof av === 'string') av = av.toLowerCase(), bv = bv.toLowerCase();
+    return av < bv ? sortDir : av > bv ? -sortDir : 0;
+  });
+
+  const tbody = document.getElementById('tableBody');
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">🔍</div><p>No reports match your filter.</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map((p, i) => {
+    const pct      = Math.round((p.count / maxCount) * 100);
+    const barColor = p.status === 'dangerous' ? 'var(--accent2)' : 'var(--green)';
+    const sent     = sentIds.has(p.id);
+    // Format lastDetected nicely
+    const lastSeen = p.lastDetected
+      ? `<span class="time-chip">${p.lastDetected}</span>`
+      : `<span class="time-chip muted">—</span>`;
+
+    return `
+    <tr style="animation-delay:${i * 0.04}s">
+      <td class="id-cell">#${String(p.id).padStart(3,'0')}</td>
+      <td>
+        <a class="map-link" href="https://maps.google.com/?q=${p.latitude},${p.longitude}" target="_blank">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${p.latitude.toFixed(4)}, ${p.longitude.toFixed(4)}
+        </a>
+      </td>
+      <td>${lastSeen}</td>
+      <td>
+        <div class="count-bar-wrap">
+          <span>${p.count}</span>
+          <div class="count-bar"><div class="count-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+        </div>
+      </td>
+      <td>
+        <span class="status-pill ${p.status}">
+          <span class="dot"></span>${p.status}
+        </span>
+      </td>
+      <td class="action-cell">
+        <button class="act-btn email ${sent ? 'sent' : ''}" onclick="sendEmail(${p.id}, this)" ${sent ? 'disabled' : ''}>
+          ${sent
+            ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Sent'
+            : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email'}
+        </button>
+        <button class="act-btn" onclick="showDetail(${p.id})">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Info
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Send email — hits POST /send-email/:id ────────────────────
+async function sendEmail(id, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Sending…';
+  try {
+    const res = await fetch(`${BASE_URL}/send-email/${id}`, {
+      method: "POST",
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    sentIds.add(id);
+    emailsSent++;
+    updateStats();
+    renderTable();
+    showToast('✉️', `Email sent for report #${String(id).padStart(3,'0')}`);
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email';
+    showToast('❌', 'Email failed — check server & .env');
+  }
+}
+
+// ── Alert all dangerous — calls /send-email/:id for each ─────
+async function emailAllDangerous() {
+  const targets = allData.filter(d => d.status === 'dangerous' && !sentIds.has(d.id));
+  if (!targets.length) { showToast('ℹ️', 'All dangerous reports already alerted'); return; }
+
+  showToast('📤', `Sending ${targets.length} email${targets.length > 1 ? 's' : ''}…`);
+
+  let ok = 0, fail = 0;
+  for (const p of targets) {
+    try {
+      const res = await fetch(`${BASE_URL}/send-email/${p.id}`, {
+        method: "POST",
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!res.ok) throw new Error();
+      sentIds.add(p.id);
+      emailsSent++;
+      ok++;
+    } catch {
+      fail++;
+    }
+    await new Promise(r => setTimeout(r, 300)); // gentle stagger
+  }
+
+  updateStats();
+  renderTable();
+  if (fail === 0) showToast('📢', `${ok} alert email${ok > 1 ? 's' : ''} sent successfully`);
+  else showToast('⚠️', `${ok} sent, ${fail} failed — check server`);
+}
+
+// ── Toggle AUTO / MANUAL — hits POST /toggle-mode ─────────────
+async function toggleMode() {
+  try {
+    const res = await fetch(BASE_URL + "/toggle-mode", {
+      method: "POST",
+      signal: AbortSignal.timeout(4000)
+    });
+    const text = await res.text(); // "Mode: AUTO" or "Mode: MANUAL"
+    isAuto = text.includes("AUTO");
+  } catch {
+    // If offline, just flip locally so UI isn't frozen
+    isAuto = !isAuto;
+    showToast('⚠️', 'Server unreachable — toggled locally');
+  }
+  document.getElementById('modeVal').textContent = isAuto ? 'AUTO' : 'MANUAL';
+  document.getElementById('toggleSwitch').classList.toggle('on', isAuto);
+  showToast('⚙️', `Mode: ${isAuto ? 'AUTO (emails on detect)' : 'MANUAL (emails on demand)'}`);
+}
+
+// ── Filter / sort helpers ─────────────────────────────────────
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+function filterTable() { renderTable(); }
+
+function sortByCol(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = -1; }
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  event.currentTarget.classList.add('sorted');
+  renderTable();
+}
+
+// ── Detail panel ──────────────────────────────────────────────
+function showDetail(id) {
+  const p = allData.find(d => d.id === id);
+  if (!p) return;
+  const lines = [
+    `ID: #${String(p.id).padStart(3,'0')}`,
+    `Lat/Lon: ${p.latitude}, ${p.longitude}`,
+    `Count: ${p.count}`,
+    `Status: ${p.status.toUpperCase()}`,
+    `Last detected: ${p.lastDetected || '—'}`
+  ].join('\n');
+  showToast('📋', `#${p.id} · ${p.status} · count ${p.count} · ${p.lastDetected || '—'}`);
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+let toastTimer;
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+document.getElementById('toggleSwitch').classList.add('on');
+setInterval(fetchData, 3000);
+fetchData();
+</script>
+</body>
+</html>

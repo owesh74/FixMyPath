@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        FIXES:
+        1. Removed BODY_SENSORS — not needed for accelerometer (TYPE_ACCELEROMETER).
+           BODY_SENSORS is only for heart rate / step counter sensors. Using it here
+           causes permission dialog confusion and does nothing.
+        2. Added ACCESS_FINE_LOCATION — required for real GPS coordinates.
+        3. Added ACCESS_COARSE_LOCATION — fallback for GPS.
+        4. INTERNET is already correct — kept as-is.
+        5. usesCleartextTraffic="true" is correct for local HTTP (localhost / IP).
+    -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+
+    <!-- NOT needed for accelerometer — removed:
+    <uses-permission android:name="android.permission.BODY_SENSORS"/> -->
+
+    <application
+        android:allowBackup="true"
+        android:usesCleartextTraffic="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.FixMyPathA">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>
