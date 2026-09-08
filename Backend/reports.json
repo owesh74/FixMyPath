@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "latitude": 21.2479533,
+    "longitude": 79.0499653,
+    "count": 21,
+    "status": "dangerous",
+    "lastDetected": "2026-04-02 13:38"
+  },
+  {
+    "id": 2,
+    "latitude": 21.2480272,
+    "longitude": 79.0501544,
+    "count": 2,
+    "status": "dangerous",
+    "lastDetected": "2026-04-02 13:35"
+  },
+  {
+    "id": 3,
+    "latitude": 0,
+    "longitude": 0,
+    "count": 52,
+    "status": "dangerous",
+    "lastDetected": "2026-06-19 11:17"
+  }
+]
